@@ -201,8 +201,8 @@ func (ghs *githubScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	wg.Wait()
 
 	// Set the resource attributes and emit metrics with those resources
-	ghs.rb.SetVcsVendorName("github")
-	ghs.rb.SetOrganizationName(ghs.cfg.GitHubOrg)
+	ghs.rb.SetVcsProviderName("github")
+	ghs.rb.SetVcsOwnerName(ghs.cfg.GitHubOrg)
 
 	res := ghs.rb.Emit()
 	return ghs.mb.Emit(metadata.WithResource(res)), nil

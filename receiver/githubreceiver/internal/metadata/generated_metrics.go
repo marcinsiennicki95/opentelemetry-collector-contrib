@@ -706,17 +706,17 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		resourceAttributeIncludeFilter: make(map[string]filter.Filter),
 		resourceAttributeExcludeFilter: make(map[string]filter.Filter),
 	}
-	if mbc.ResourceAttributes.OrganizationName.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["organization.name"] = filter.CreateFilter(mbc.ResourceAttributes.OrganizationName.MetricsInclude)
+	if mbc.ResourceAttributes.VcsOwnerName.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["vcs.owner.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsOwnerName.MetricsInclude)
 	}
-	if mbc.ResourceAttributes.OrganizationName.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["organization.name"] = filter.CreateFilter(mbc.ResourceAttributes.OrganizationName.MetricsExclude)
+	if mbc.ResourceAttributes.VcsOwnerName.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["vcs.owner.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsOwnerName.MetricsExclude)
 	}
-	if mbc.ResourceAttributes.VcsVendorName.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["vcs.vendor.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsVendorName.MetricsInclude)
+	if mbc.ResourceAttributes.VcsProviderName.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["vcs.provider.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsProviderName.MetricsInclude)
 	}
-	if mbc.ResourceAttributes.VcsVendorName.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["vcs.vendor.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsVendorName.MetricsExclude)
+	if mbc.ResourceAttributes.VcsProviderName.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["vcs.provider.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsProviderName.MetricsExclude)
 	}
 
 	for _, op := range options {

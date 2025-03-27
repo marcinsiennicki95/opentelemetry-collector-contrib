@@ -129,7 +129,7 @@ const (
 	AttributeVCSRefHeadRevisionAuthorName  = "vcs.ref.head.revision.author.name"  // GitHub's Head Revision Author Name
 	AttributeVCSRefHeadRevisionAuthorEmail = "vcs.ref.head.revision.author.email" // GitHub's Head Revision Author Email
 	AttributeVCSRepositoryOwner            = "vcs.repository.owner"               // GitHub's Owner Login
-	AttributeVCSVendorName                 = "vcs.vendor.name"                    // GitHub
+	AttributeVCSProviderName               = "vcs.provider.name"                  // GitHub
 )
 
 // getWorkflowRunAttrs returns a pcommon.Map of attributes for the Workflow Run
@@ -148,7 +148,7 @@ func (gtr *githubTracesReceiver) getWorkflowRunAttrs(resource pcommon.Resource, 
 
 	// VCS Attributes
 	attrs.PutStr(AttributeVCSRepositoryName, e.GetRepo().GetName())
-	attrs.PutStr(AttributeVCSVendorName, "github")
+	attrs.PutStr(AttributeVCSProviderName, "github")
 	attrs.PutStr(AttributeVCSRefHead, e.GetWorkflowRun().GetHeadBranch())
 	attrs.PutStr(AttributeVCSRefHeadType, AttributeVCSRefHeadTypeBranch)
 	attrs.PutStr(AttributeVCSRefHeadRevision, e.GetWorkflowRun().GetHeadSHA())
@@ -221,7 +221,7 @@ func (gtr *githubTracesReceiver) getWorkflowJobAttrs(resource pcommon.Resource, 
 
 	// VCS Attributes
 	attrs.PutStr(AttributeVCSRepositoryName, e.GetRepo().GetName())
-	attrs.PutStr(AttributeVCSVendorName, "github")
+	attrs.PutStr(AttributeVCSProviderName, "github")
 	attrs.PutStr(AttributeVCSRefHead, e.GetWorkflowJob().GetHeadBranch())
 	attrs.PutStr(AttributeVCSRefHeadType, AttributeVCSRefHeadTypeBranch)
 	attrs.PutStr(AttributeVCSRefHeadRevision, e.GetWorkflowJob().GetHeadSHA())

@@ -504,6 +504,7 @@ func (s *azureScraper) getResourceMetricsValues(ctx context.Context, subscriptio
 			}
 
 			for _, metric := range result.Value {
+				seen := map[string]struct{}{}
 				for _, timeseriesElement := range metric.Timeseries {
 					if timeseriesElement.Data == nil {
 						continue
@@ -511,13 +512,29 @@ func (s *azureScraper) getResourceMetricsValues(ctx context.Context, subscriptio
 					attributes := map[string]*string{}
 					maps.Copy(attributes, res.attributes)
 					for _, value := range timeseriesElement.Metadatavalues {
-						name := metadataPrefix + *value.Name.Value
+						name := metadataPrefix + strings.ToLower(*value.Name.Value)
 						attributes[name] = value.Value
 					}
 					for tagName, value := range res.tags {
 						name := tagPrefix + tagName
 						attributes[name] = value
 					}
+					attrKey := buildAttributesKey(attributes)
+					if _, exists := seen[attrKey]; exists {
+						rawMetadata := make(map[string]string, len(timeseriesElement.Metadatavalues))
+						for _, value := range timeseriesElement.Metadatavalues {
+							rawMetadata[*value.Name.Value] = *value.Value
+						}
+						s.settings.Logger.Warn(
+							"Azure Monitor API returned duplicate timeseries with metadata values that differ only in casing; "+
+								"the duplicate is being dropped to prevent inflated aggregations",
+							zap.String("resource_id", resourceID),
+							zap.String("metric", *metric.Name.Value),
+							zap.Any("dropped_metadata", rawMetadata),
+						)
+						continue
+					}
+					seen[attrKey] = struct{}{}
 					for _, metricValue := range timeseriesElement.Data {
 						s.processTimeseriesData(resourceID, metric, metricValue, attributes)
 					}
@@ -670,4 +687,25 @@ func filterResourceTags(tagFilterList map[string]struct{}, resourceTags map[stri
 	}
 
 	return includedTags
+}
+
+// buildAttributesKey builds a deterministic, case-insensitive string key from sorted attributes.
+// Used to detect duplicate timeseries elements after metadata normalization.
+// Values are lowercased in the key so that e.g. "Primary" and "primary" are treated as equal.
+func buildAttributesKey(attributes map[string]*string) string {
+	keys := make([]string, 0, len(attributes))
+	for k := range attributes {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	var sb strings.Builder
+	for _, k := range keys {
+		sb.WriteString(k)
+		sb.WriteByte('=')
+		if attributes[k] != nil {
+			sb.WriteString(strings.ToLower(*attributes[k]))
+		}
+		sb.WriteByte(',')
+	}
+	return sb.String()
 }

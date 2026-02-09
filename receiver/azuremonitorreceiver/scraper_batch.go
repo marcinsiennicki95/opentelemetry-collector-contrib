@@ -500,6 +500,7 @@ func (s *azureBatchScraper) getBatchMetricsValues(ctx context.Context, subscript
 						}
 						resID := *metricValues.ResourceID
 						for _, metric := range metricValues.Values {
+							seen := map[string]struct{}{}
 							for _, timeseriesElement := range metric.TimeSeries {
 								res := s.resources[subscriptionID][resID]
 								if res == nil {
@@ -508,7 +509,7 @@ func (s *azureBatchScraper) getBatchMetricsValues(ctx context.Context, subscript
 								attributes := map[string]*string{}
 								maps.Copy(attributes, res.attributes)
 								for _, value := range timeseriesElement.MetadataValues {
-									name := metadataPrefix + *value.Name.Value
+									name := metadataPrefix + strings.ToLower(*value.Name.Value)
 									attributes[name] = value.Value
 								}
 								for tagName, value := range res.tags {
@@ -516,6 +517,22 @@ func (s *azureBatchScraper) getBatchMetricsValues(ctx context.Context, subscript
 									attributes[name] = value
 								}
 								attributes["timegrain"] = &compositeKey.timeGrain
+								attrKey := buildAttributesKey(attributes)
+								if _, exists := seen[attrKey]; exists {
+									rawMetadata := make(map[string]string, len(timeseriesElement.MetadataValues))
+									for _, value := range timeseriesElement.MetadataValues {
+										rawMetadata[*value.Name.Value] = *value.Value
+									}
+									s.settings.Logger.Warn(
+										"Azure Monitor API returned duplicate timeseries with metadata values that differ only in casing; "+
+											"the duplicate is being dropped to prevent inflated aggregations",
+										zap.String("resource_id", resID),
+										zap.String("metric", *metric.Name.Value),
+										zap.Any("dropped_metadata", rawMetadata),
+									)
+									continue
+								}
+								seen[attrKey] = struct{}{}
 								for i := len(timeseriesElement.Data) - 1; i >= 0; i-- { // reverse for loop because newest timestamp is at the end of the slice
 									metricValue := timeseriesElement.Data[i]
 									if metricValueIsNotEmpty(metricValue) {

@@ -169,3 +169,67 @@ func TestSerializeDimensions(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildAttributesKey(t *testing.T) {
+	val1 := "value1"
+	val2 := "value2"
+
+	tests := []struct {
+		name     string
+		attrs    map[string]*string
+		expected string
+	}{
+		{
+			name:     "empty attributes",
+			attrs:    map[string]*string{},
+			expected: "",
+		},
+		{
+			name:     "single attribute",
+			attrs:    map[string]*string{"key1": &val1},
+			expected: "key1=value1,",
+		},
+		{
+			name:     "nil value attribute",
+			attrs:    map[string]*string{"key1": nil},
+			expected: "key1=,",
+		},
+		{
+			name: "deterministic ordering regardless of insertion",
+			attrs: map[string]*string{
+				"zebra": &val1,
+				"alpha": &val2,
+			},
+			expected: "alpha=value2,zebra=value1,",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := buildAttributesKey(tt.attrs)
+			require.Equal(t, tt.expected, actual)
+		})
+	}
+
+	// Verify determinism: call multiple times with same input
+	t.Run("deterministic across calls", func(t *testing.T) {
+		attrs := map[string]*string{
+			"metadata_responsetype": &val1,
+			"metadata_apiname":     &val2,
+			"name":                 &val1,
+		}
+		first := buildAttributesKey(attrs)
+		for i := 0; i < 10; i++ {
+			require.Equal(t, first, buildAttributesKey(attrs))
+		}
+	})
+
+	// Verify case-insensitive comparison: "Primary" and "primary" produce the same key
+	t.Run("case insensitive values", func(t *testing.T) {
+		primary := "Primary"
+		primaryLower := "primary"
+		attrs1 := map[string]*string{"metadata_geotype": &primary}
+		attrs2 := map[string]*string{"metadata_geotype": &primaryLower}
+		require.Equal(t, buildAttributesKey(attrs1), buildAttributesKey(attrs2))
+	})
+}
